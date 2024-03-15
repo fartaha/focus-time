@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Focus Timer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+        }
+        #timer {
+            font-size: 2em;
+            margin-bottom: 20px;
+        }
+        button {
+            font-size: 1em;
+            padding: 10px 20px;
+            margin: 0 10px;
+            cursor: pointer;
+        }
+        #log {
+            margin-top: 20px;
+            text-align: left;
+            max-width: 500px;
+            margin: 20px auto;
+            padding: 0;
+            list-style-type: none;
+        }
+    </style>
+</head>
+<body>
+    <h1>Focus Timer</h1>
+    <div id="timer">00:00:00</div>
+    <button id="startBtn">Start</button>
+    <button id="stopBtn" disabled>Stop</button>
+    <ul id="log"></ul>
+    <button id="downloadBtn" onclick="downloadLog()">Download Log</button>
+
+    <script>
+        let startTime;
+        let timerInterval;
+        const loggedTimes = [];
+
+        const timerDisplay = document.getElementById('timer');
+        const startButton = document.getElementById('startBtn');
+        const stopButton = document.getElementById('stopBtn');
+        const logList = document.getElementById('log');
+
+        startButton.addEventListener('click', startTimer);
+        stopButton.addEventListener('click', stopTimer);
+
+        function startTimer() {
+            startTime = new Date().getTime();
+            timerInterval = setInterval(updateTimer, 1000);
+            startButton.disabled = true;
+            stopButton.disabled = false;
+        }
+
+        function stopTimer() {
+            clearInterval(timerInterval);
+            const endTime = new Date().getTime();
+            const duration = new Date(endTime - startTime);
+            const formattedDuration = formatTime(duration);
+            const startDateTime = new Date(startTime);
+            const endDateTime = new Date(endTime);
+            const logEntry = `${startDateTime.toLocaleString()} - ${endDateTime.toLocaleString()}: ${formattedDuration}`;
+            loggedTimes.push(logEntry);
+            updateLog();
+            startButton.disabled = false;
+            stopButton.disabled = true;
+            timerDisplay.textContent = '00:00:00';
+        }
+
+        function updateTimer() {
+            const currentTime = new Date().getTime();
+            const elapsedTime = new Date(currentTime - startTime);
+            timerDisplay.textContent = formatTime(elapsedTime);
+        }
+
+        function formatTime(time) {
+            const hours = String(time.getUTCHours()).padStart(2, '0');
+            const minutes = String(time.getUTCMinutes()).padStart(2, '0');
+            const seconds = String(time.getUTCSeconds()).padStart(2, '0');
+            return `${hours}:${minutes}:${seconds}`;
+        }
+
+        function updateLog() {
+            logList.innerHTML = '';
+            loggedTimes.forEach(entry => {
+                const li = document.createElement('li');
+                li.textContent = entry;
+                logList.appendChild(li);
+            });
+        }
+
+        function downloadLog() {
+            const currentDate = new Date().toISOString().replace(/[-T:\.Z]/g, '');
+            const formattedDate = currentDate.replace(/(\d{8})(\d{6})/, '$1-$2');
+            const fileName = `focus_log_${formattedDate}.csv`;
+            const csvContent = "data:text/csv;charset=utf-8,"
+                + loggedTimes.map(entry => entry.replace(/,/g, ' ')).join("\n");
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            // link.setAttribute("download", "focus_log.csv");
+            link.setAttribute("download", fileName);
+            document.body.appendChild(link);
+            link.click();
+        }
+    </script>
+</body>
+</html>
